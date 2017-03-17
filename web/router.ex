@@ -1,6 +1,19 @@
 defmodule Wep.Router do
   use Wep.Web, :router
 
+  pipeline :api do
+    plug :accepts, ["json"]
+  end
+
+  # API
+  scope "/", Wep do
+    pipe_through :api
+
+    get "/shows/search", ShowController, :search
+    resources "/shows", ShowController
+    resources "/questions", QuestionController, except: [:new, :edit]
+  end
+
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session
@@ -9,18 +22,8 @@ defmodule Wep.Router do
     plug :put_secure_browser_headers
   end
 
-  pipeline :api do
-    plug :accepts, ["json"]
-  end
-
-  scope "/", Wep do
+  scope "/w", Wep do
     pipe_through :browser # Use the default browser stack
-
-    get "/", PageController, :index
   end
 
-  # Other scopes may use custom stacks.
-  # scope "/api", Wep do
-  #   pipe_through :api
-  # end
 end

@@ -8,11 +8,12 @@ defmodule Wep.OmdbFetcher do
   import Ecto.Query, only: [from: 2, first: 1]
 
   @base_url "http://www.omdbapi.com/"
-
+  @api_key "6fefe083"
   # fetches and stores show + seasons + episodes from imdb
   # returns nothing useful
   def fetch(title) do
-    query_url = URI.encode("#{@base_url}?t=#{title}&type=series")
+    query_url = URI.encode("#{@base_url}?t=#{title}&type=series&apikey=#{@api_key}")
+    
     case HTTPoison.get query_url do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         parse_and_create_show(body)
@@ -34,7 +35,8 @@ defmodule Wep.OmdbFetcher do
             # build params from response
             params = %{
               title: body["Title"],
-              imdb_id: body["imdbID"]
+              imdb_id: body["imdbID"],
+              image: body["Poster"],
             }
             # look up the show in database
             case Repo.get_by(Show, title: params.title) do
@@ -55,7 +57,7 @@ defmodule Wep.OmdbFetcher do
 
   def fetch_seasons(show: show, total_seasons: total_seasons) do
     Enum.each 1..total_seasons, fn i ->
-      query_url = "#{@base_url}?t=#{show.imdb_id}&Season=#{i}"
+      query_url = "#{@base_url}?t=#{show.imdb_id}&Season=#{i}&apikey=#{@api_key}"
       case HTTPoison.get query_url do
         {:ok, result} -> parse_and_create_season(show: show, season_result: result, season_number: i)
         {:error, reason} -> IO.puts("Failed to retrieve season #{i} for #{show.title}: #{reason}")
